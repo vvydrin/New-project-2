@@ -24,9 +24,29 @@
         color: #1f2937;
         letter-spacing: 0.04em;
       }
+
+      .belgrade-time {
+        margin-top: 1.5rem;
+        font-size: 1.25rem;
+        color: #4b5563;
+      }
     </style>
   </head>
   <body>
     <h1>Hello, World!</h1>
+    <p class="belgrade-time" id="belgrade-time">Белград: <span id="time"></span></p>
+    <script>
+      const formatter = new Intl.DateTimeFormat("ru-RU", {
+        timeZone: "Europe/Belgrade",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      function updateTime() {
+        document.getElementById("time").textContent = formatter.format(new Date());
+      }
+      updateTime();
+      setInterval(updateTime, 1000);
+    </script>
   </body>
 </html>
