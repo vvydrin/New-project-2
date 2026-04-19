@@ -1,52 +1,546 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello World</title>
+    <title>Погода</title>
     <style>
       :root {
-        color-scheme: light;
+        color-scheme: light dark;
+        --background: #f7f7f5;
+        --text-primary: #111111;
+        --text-secondary: #555555;
+        --surface: #fdfdfc;
+        --border: #d8d8d5;
+        --accent: #1d4ed8;
+      }
+
+      :root[data-theme="dark"] {
+        --background: #101112;
+        --text-primary: #f4f4f4;
+        --text-secondary: #b5b5b5;
+        --surface: #17181a;
+        --border: #2d2f33;
+        --accent: #8ab4ff;
       }
 
       body {
         margin: 0;
         min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+        background: var(--background);
+        color: var(--text-primary);
+        padding: clamp(1rem, 4vw, 3rem);
+      }
+
+      .card {
+        text-align: left;
+        position: relative;
+        width: min(980px, 96vw);
+        padding: 1rem;
+        border: none;
+        border-radius: 2px;
+        background: var(--surface);
+      }
+
+      .poster-grid {
         display: grid;
-        place-items: center;
-        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-        background: linear-gradient(135deg, #f6f8ff, #e7fff4);
+        grid-template-columns: minmax(170px, 0.85fr) 2.15fr;
+        gap: 1rem;
+      }
+
+      .poster-left {
+        border-right: 1px solid var(--border);
+        padding: 0.5rem 1rem 0.5rem 0.3rem;
+      }
+
+      .poster-right {
+        padding: 0.3rem 0.3rem 0.3rem 0;
       }
 
       h1 {
         margin: 0;
-        font-size: clamp(2rem, 6vw, 4rem);
-        color: #1f2937;
-        letter-spacing: 0.04em;
+        font-size: clamp(2.1rem, 7vw, 4.3rem);
+        color: var(--text-primary);
+        letter-spacing: 0.01em;
+        font-weight: 700;
+        line-height: 0.95;
       }
 
-      .belgrade-time {
-        margin-top: 1.5rem;
-        font-size: 1.25rem;
-        color: #4b5563;
+      .city-time {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        text-align: left;
+        padding: 0.78rem 0;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        background: transparent;
+      }
+
+      .city-name {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .city-meta {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        justify-content: flex-end;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .city-weather {
+        font-size: 0.95rem;
+      }
+
+      .city-remove {
+        font: inherit;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 0;
+        padding: 0.05rem 0.3rem;
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.14s ease, color 0.14s ease;
+      }
+
+      .city-time:hover .city-remove,
+      .city-time:focus-within .city-remove {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .add-city-row {
+        margin-top: 1.1rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      .add-city-panel {
+        margin-top: 0.5rem;
+        display: none;
+        gap: 0.5rem;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      .add-city-panel.visible {
+        display: flex;
+      }
+
+      .add-city-panel input {
+        font: inherit;
+        color: var(--text-primary);
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 0;
+        padding: 0.4rem 0.55rem;
+        min-width: 14rem;
+      }
+
+      .icon-button {
+        font: inherit;
+        color: var(--text-primary);
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        padding: 0.35rem 0.45rem;
+        cursor: pointer;
+        line-height: 1;
+        transition: transform 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .icon-button:hover {
+        color: var(--accent);
+      }
+
+      .icon-button:active {
+        transform: scale(0.97);
+      }
+
+      .status {
+        margin-top: 0.7rem;
+        min-height: 1.2em;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+      }
+
+      .theme-row {
+        position: absolute;
+        top: 0.65rem;
+        right: 0.65rem;
+      }
+
+      .theme-toggle {
+        min-width: 2rem;
+        text-align: center;
+      }
+
+      .add-trigger {
+        font-size: 1.45rem;
+        font-weight: 500;
+        line-height: 0.85;
+      }
+
+      @media (max-width: 760px) {
+        .poster-grid {
+          grid-template-columns: 1fr;
+          gap: 0.2rem;
+        }
+
+        .poster-left {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+          padding: 0.3rem 0 0.8rem;
+        }
+
+        .poster-right {
+          padding-right: 0;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Hello, World!</h1>
-    <p class="belgrade-time" id="belgrade-time">Белград: <span id="time"></span></p>
+    <div class="card">
+      <div class="poster-grid">
+        <div class="poster-left">
+          <h1>Погода</h1>
+        </div>
+        <div class="poster-right">
+          <div id="city-list"></div>
+          <div class="add-city-row">
+            <button
+              class="icon-button add-trigger"
+              type="button"
+              id="show-add-city"
+              aria-label="Показать поле города"
+              title="Добавить город"
+            >
+              +
+            </button>
+          </div>
+          <form class="add-city-panel" id="add-city-form">
+            <input id="city-input" type="text" placeholder="Введите город" autocomplete="off" />
+            <button class="icon-button" type="submit" aria-label="Подтвердить добавление" title="Добавить">✓</button>
+          </form>
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+      <div class="theme-row">
+        <button class="icon-button theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему" title="Тема: как в системе">
+          ⌘
+        </button>
+      </div>
+    </div>
     <script>
-      const formatter = new Intl.DateTimeFormat("ru-RU", {
-        timeZone: "Europe/Belgrade",
+      const THEME_STORAGE_KEY = "theme-preference";
+      const CITY_STORAGE_KEY = "city-list";
+      const themeToggle = document.getElementById("theme-toggle");
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+      const cityListElement = document.getElementById("city-list");
+      const addCityForm = document.getElementById("add-city-form");
+      const addCityPanel = document.getElementById("add-city-form");
+      const showAddCityButton = document.getElementById("show-add-city");
+      const cityInput = document.getElementById("city-input");
+      const statusElement = document.getElementById("status");
+      const themeCycle = ["system", "light", "dark"];
+      const themeIconByPreference = { system: "⌘", light: "☼", dark: "◐" };
+      const themeTitleByPreference = {
+        system: "Тема: как в системе",
+        light: "Тема: светлая",
+        dark: "Тема: тёмная",
+      };
+
+      function getStoredTheme() {
+        const theme = localStorage.getItem(THEME_STORAGE_KEY);
+        return theme === "light" || theme === "dark" || theme === "system" ? theme : "system";
+      }
+
+      function applyTheme(preference) {
+        const resolvedTheme = preference === "system" ? (systemTheme.matches ? "dark" : "light") : preference;
+        document.documentElement.setAttribute("data-theme", resolvedTheme);
+      }
+
+      function setThemePreference(preference) {
+        localStorage.setItem(THEME_STORAGE_KEY, preference);
+        applyTheme(preference);
+        themeToggle.textContent = themeIconByPreference[preference];
+        themeToggle.title = themeTitleByPreference[preference];
+      }
+
+      const initialPreference = getStoredTheme();
+      setThemePreference(initialPreference);
+
+      themeToggle.addEventListener("click", () => {
+        const currentPreference = getStoredTheme();
+        const currentIndex = themeCycle.indexOf(currentPreference);
+        const nextPreference = themeCycle[(currentIndex + 1) % themeCycle.length];
+        setThemePreference(nextPreference);
+      });
+
+      systemTheme.addEventListener("change", () => {
+        if (getStoredTheme() === "system") {
+          applyTheme("system");
+        }
+      });
+
+      const timeFormatOptions = {
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
-      });
-      function updateTime() {
-        document.getElementById("time").textContent = formatter.format(new Date());
+      };
+      const formatterByTimezone = new Map();
+
+      const defaultCities = [
+        { id: "belgrade", name: "Белград", latitude: 44.8176, longitude: 20.4633, timeZone: "Europe/Belgrade" },
+        { id: "moscow", name: "Москва", latitude: 55.7558, longitude: 37.6173, timeZone: "Europe/Moscow" },
+        { id: "ufa", name: "Уфа", latitude: 54.7388, longitude: 55.9721, timeZone: "Asia/Yekaterinburg" },
+      ];
+
+      const weatherDescriptionByCode = {
+        0: "ясно",
+        1: "преимущественно ясно",
+        2: "переменная облачность",
+        3: "пасмурно",
+        45: "туман",
+        48: "изморозь",
+        51: "слабая морось",
+        53: "морось",
+        55: "сильная морось",
+        61: "слабый дождь",
+        63: "дождь",
+        65: "сильный дождь",
+        71: "слабый снег",
+        73: "снег",
+        75: "сильный снег",
+        80: "ливень",
+        81: "ливень",
+        82: "сильный ливень",
+        95: "гроза",
+      };
+      const weatherIconByCode = {
+        0: "☀️",
+        1: "🌤️",
+        2: "⛅",
+        3: "☁️",
+        45: "🌫️",
+        48: "🌫️",
+        51: "🌦️",
+        53: "🌦️",
+        55: "🌧️",
+        61: "🌦️",
+        63: "🌧️",
+        65: "🌧️",
+        71: "🌨️",
+        73: "❄️",
+        75: "❄️",
+        80: "🌦️",
+        81: "🌧️",
+        82: "⛈️",
+        95: "⛈️",
+      };
+
+      function createCityId() {
+        return `city-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
       }
+
+      function getStoredCities() {
+        try {
+          const raw = localStorage.getItem(CITY_STORAGE_KEY);
+          if (!raw) {
+            return defaultCities;
+          }
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed) || parsed.length === 0) {
+            return defaultCities;
+          }
+          return parsed;
+        } catch (error) {
+          console.error("Не удалось прочитать список городов:", error);
+          return defaultCities;
+        }
+      }
+
+      function saveCities() {
+        localStorage.setItem(CITY_STORAGE_KEY, JSON.stringify(cities));
+      }
+
+      const cities = getStoredCities();
+
+      function getFormatter(timeZone) {
+        if (!formatterByTimezone.has(timeZone)) {
+          formatterByTimezone.set(timeZone, new Intl.DateTimeFormat("ru-RU", { ...timeFormatOptions, timeZone }));
+        }
+        return formatterByTimezone.get(timeZone);
+      }
+
+      function renderCities() {
+        cityListElement.innerHTML = "";
+        for (const city of cities) {
+          const row = document.createElement("p");
+          row.className = "city-time";
+          row.innerHTML =
+            `<span class="city-name">${city.name}</span>` +
+            `<span class="city-meta"><span id="${city.id}-time"></span><span class="city-weather" id="${city.id}-weather">...</span></span>` +
+            `<button class="city-remove" data-city-id="${city.id}" type="button" aria-label="Удалить ${city.name}" title="Удалить ${city.name}">×</button>`;
+          cityListElement.append(row);
+        }
+      }
+
+      function removeCityById(cityId) {
+        const cityIndex = cities.findIndex((city) => city.id === cityId);
+        if (cityIndex === -1) {
+          return;
+        }
+        const [removedCity] = cities.splice(cityIndex, 1);
+        saveCities();
+        renderCities();
+        updateTime();
+        updateAllWeather();
+        setStatus(`Город "${removedCity.name}" удален.`);
+      }
+
+      function updateTime() {
+        const now = new Date();
+        for (const city of cities) {
+          const timeElement = document.getElementById(`${city.id}-time`);
+          if (!timeElement) {
+            continue;
+          }
+          timeElement.textContent = getFormatter(city.timeZone).format(now);
+        }
+      }
+
+      async function updateWeatherForCity(city) {
+        const weatherElement = document.getElementById(`${city.id}-weather`);
+        if (!weatherElement) {
+          return;
+        }
+        try {
+          const weatherUrl =
+            `https://api.open-meteo.com/v1/forecast?latitude=${city.latitude}` +
+            `&longitude=${city.longitude}&current=temperature_2m,weather_code&timezone=auto`;
+          const response = await fetch(weatherUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          const temperature = Math.round(data.current.temperature_2m);
+          const weatherCode = data.current.weather_code;
+          const description = weatherDescriptionByCode[weatherCode] || "неизвестно";
+          const icon = weatherIconByCode[weatherCode] || "🌡️";
+          weatherElement.textContent = `${temperature}°C ${icon}`;
+          weatherElement.title = description;
+        } catch (error) {
+          weatherElement.textContent = "н/д";
+          weatherElement.title = "Погода недоступна";
+          console.error(`Не удалось обновить погоду для ${city.name}:`, error);
+        }
+      }
+
+      async function updateAllWeather() {
+        await Promise.all(cities.map((city) => updateWeatherForCity(city)));
+      }
+
+      async function resolveCityByName(name) {
+        const geocodingUrl =
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}` +
+          "&count=1&language=ru&format=json";
+        const response = await fetch(geocodingUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        if (!data.results || data.results.length === 0) {
+          return null;
+        }
+        const result = data.results[0];
+        return {
+          id: createCityId(),
+          name: result.name,
+          latitude: result.latitude,
+          longitude: result.longitude,
+          timeZone: result.timezone,
+        };
+      }
+
+      function setStatus(message) {
+        statusElement.textContent = message;
+      }
+
+      addCityForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const cityName = cityInput.value.trim();
+        if (!cityName) {
+          setStatus("Введите название города.");
+          return;
+        }
+        setStatus("Ищу город...");
+        try {
+          const resolvedCity = await resolveCityByName(cityName);
+          if (!resolvedCity) {
+            setStatus("Город не найден.");
+            return;
+          }
+          const alreadyExists = cities.some(
+            (city) => city.name.toLowerCase() === resolvedCity.name.toLowerCase() && city.timeZone === resolvedCity.timeZone,
+          );
+          if (alreadyExists) {
+            setStatus("Этот город уже добавлен.");
+            return;
+          }
+          cities.push(resolvedCity);
+          saveCities();
+          renderCities();
+          updateTime();
+          updateWeatherForCity(resolvedCity);
+          cityInput.value = "";
+          addCityPanel.classList.remove("visible");
+          setStatus(`Город "${resolvedCity.name}" добавлен.`);
+        } catch (error) {
+          console.error("Не удалось добавить город:", error);
+          setStatus("Ошибка при добавлении города.");
+        }
+      });
+
+      showAddCityButton.addEventListener("click", () => {
+        addCityPanel.classList.toggle("visible");
+        if (addCityPanel.classList.contains("visible")) {
+          cityInput.focus();
+        } else {
+          cityInput.value = "";
+          setStatus("");
+        }
+      });
+
+      cityListElement.addEventListener("click", (event) => {
+        const removeButton = event.target.closest(".city-remove");
+        if (!removeButton) {
+          return;
+        }
+        removeCityById(removeButton.dataset.cityId);
+      });
+
+      renderCities();
       updateTime();
+      updateAllWeather();
       setInterval(updateTime, 1000);
+      setInterval(updateAllWeather, 10 * 60 * 1000);
     </script>
   </body>
 </html>
