@@ -48,8 +48,8 @@
 
       .poster-grid {
         display: grid;
-        grid-template-columns: minmax(170px, 0.85fr) 2.15fr;
-        gap: 1rem;
+        grid-template-columns: minmax(240px, 1fr) 2fr;
+        gap: 1.25rem;
       }
 
       .poster-left {
@@ -61,22 +61,27 @@
         padding: 0.3rem 0.3rem 0.3rem 0;
       }
 
+      #city-list {
+        width: min(100%, 560px);
+      }
+
       h1 {
         margin: 0;
-        font-size: clamp(2.1rem, 7vw, 4.3rem);
+        font-size: clamp(2rem, 5.2vw, 3.4rem);
         color: var(--text-primary);
         letter-spacing: 0.01em;
         font-weight: 700;
-        line-height: 0.95;
+        line-height: 1.02;
       }
 
       .city-time {
         margin: 0;
         font-size: 1.1rem;
         color: var(--text-secondary);
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr 160px auto;
         align-items: center;
-        gap: 0.55rem;
+        column-gap: 0.6rem;
         text-align: left;
         padding: 0.78rem 0;
         border-bottom: 1px solid var(--border);
@@ -90,11 +95,12 @@
       }
 
       .city-meta {
-        margin-left: auto;
         display: inline-flex;
         align-items: center;
         gap: 0.6rem;
         justify-content: flex-end;
+        justify-self: end;
+        width: 160px;
         text-align: right;
         font-variant-numeric: tabular-nums;
       }
